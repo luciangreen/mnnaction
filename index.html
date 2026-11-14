@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MNN in Action</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <h1>MNN in Action</h1>
+  <label class="pick">Algorithm <select id="algorithm" aria-label="Algorithm"></select></label>
+  <span class="spacer"></span>
+  <span id="where" class="where" title="Where the steps come from"></span>
+  <button id="settingsBtn" class="ghost" title="Settings" aria-label="Settings">⚙</button>
+</header>
+
+<main class="layout">
+  <section class="left" aria-label="Algorithm">
+    <p id="about" class="about"></p>
+
+    <div class="inputs">
+      <div class="tabs" role="tablist">
+        <button id="tabDemo" role="tab" class="tab on" aria-selected="true">Demo</button>
+        <button id="tabCustom" role="tab" class="tab" aria-selected="false">Custom data</button>
+      </div>
+      <div id="demoPane" class="pane">
+        <label>Demo <select id="demo" aria-label="Demo"></select></label>
+        <div id="demoPreview" class="preview"></div>
+      </div>
+      <div id="customPane" class="pane hidden">
+        <div id="customForm"></div>
+        <button id="fromDemo" class="ghost small" type="button">Start from the demo</button>
+      </div>
+      <div class="runrow">
+        <button id="run" class="primary">Run on mnns</button>
+        <span id="status" class="status" role="status" aria-live="polite"></span>
+      </div>
+    </div>
+
+    <h2>Pseudocode</h2>
+    <ol id="pseudocode" class="pseudocode"></ol>
+  </section>
+
+  <section class="right" aria-label="Animation">
+    <div id="note" class="note">Choose an algorithm and a demo, or your own data, then press Run.</div>
+    <div id="stage" class="stage"></div>
+  </section>
+</main>
+
+<footer class="controls" aria-label="Step controls">
+  <button id="first" title="First step (Home)" aria-label="First step">⏮</button>
+  <button id="prev" title="Back a step (←)" aria-label="Back a step">◀</button>
+  <button id="play" class="primary" title="Play or pause (Space)" aria-label="Play">▶</button>
+  <button id="next" title="Forward a step (→)" aria-label="Forward a step">▶|</button>
+  <button id="last" title="Last step (End)" aria-label="Last step">⏭</button>
+  <input id="scrub" type="range" min="0" max="0" value="0" aria-label="Step">
+  <span id="count" class="count">0 / 0</span>
+  <label class="speed">Speed <select id="speed" aria-label="Speed"><option value="2400">slow</option><option value="1400" selected>normal</option><option value="700">fast</option></select></label>
+</footer>
+
+<dialog id="settings">
+  <form method="dialog" class="settings">
+    <h2>Settings</h2>
+    <p>MNN in Action runs your mnns through SWI-Prolog in LucianOS. Folders are from your home folder.</p>
+    <label>mnns folder <input id="mnnsDir" type="text" autocomplete="off"></label>
+    <label>S2A2 folder (for the S2A2 bridge) <input id="s2a2Dir" type="text" autocomplete="off"></label>
+    <label class="check"><input id="useRecorded" type="checkbox"> Show demos from the recorded runs (no Prolog needed)</label>
+    <p class="small">Outside LucianOS, or on a phone away from your computer, demos use runs recorded from the real mnns; custom data needs LucianOS.</p>
+    <menu><button value="ok" class="primary">Done</button></menu>
+  </form>
+</dialog>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

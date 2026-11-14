@@ -1,0 +1,11 @@
+{
+  "name": "mnnaction",
+  "version": "0.1.0",
+  "description": "MNN in Action: mnns's algorithms animated step by step, on demos or your own data, run on the real mnns",
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "demos": "node scripts/check-demos.mjs --write"
+  },
+  "license": "BSD-3-Clause"
+}

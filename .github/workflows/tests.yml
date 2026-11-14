@@ -1,0 +1,39 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: mnnaction
+      - name: Check out mnns (the algorithms shown)
+        uses: actions/checkout@v4
+        with:
+          repository: luciangreen/mnns
+          path: mnns
+      - name: Fetch S2A2 (for the S2A2 bridge)
+        run: git clone --depth 1 https://github.com/luciangreen/S2A2 S2A2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install SWI-Prolog
+        run: |
+          sudo apt-add-repository --yes ppa:swi-prolog/stable
+          sudo apt-get update
+          sudo apt-get install --yes swi-prolog-nox
+      - name: Unit tests
+        working-directory: mnnaction
+        run: npm test
+      - name: Every demo runs on real mnns
+        working-directory: mnnaction
+        env:
+          MNNS_DIR: ${{ github.workspace }}/mnns
+          S2A2_DIR: ${{ github.workspace }}/S2A2
+          PRINT_RECORDED: "1"
+        run: node scripts/check-demos.mjs
