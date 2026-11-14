@@ -53,7 +53,7 @@ const say = (text, error = false) => { $('status').textContent = text; $('status
 
 async function driverPath() {
   const text = await (await fetch(new URL('./prolog/mnnaction.pl', import.meta.url))).text();
-  const path = '.lucianos/mnnaction/mnnaction.pl';
+  const path = '.mnnaction/mnnaction.pl'; // a copy of the driver, kept up to date, for swipl to load
   await api.files.write(path, text, { force: true, mkdirs: true });
   return path;
 }

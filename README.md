@@ -30,7 +30,7 @@ Each algorithm has **demos** and **custom data**: your own program, examples, se
 MNN in Action is a LucianOS app. The suite installer (`lucianoffice/scripts/install.sh`) puts it in `lucianos/apps/mnnaction`, mnns and S2A2 beside lucianos, and it opens from the desktop like the other apps.
 
 - **Settings (⚙):** the mnns folder and the S2A2 folder, from your home folder. They default to `Dropbox/GitHub-private2/mnns` and `Dropbox/GitHub-private2/S2A2`.
-- **Requirements:** SWI-Prolog (`swipl`) on the computer running LucianOS.
+- **Requirements:** SWI-Prolog (`swipl`) on the computer running LucianOS, with `swipl` in `allowedCommands` in LucianOS's `config.json` (as for the other Prolog apps). Each run writes a copy of the driver to `~/.mnnaction/mnnaction.pl` for swipl to load.
 - **Outside LucianOS** (opened as a plain page, or on a phone away from your computer), the demos play runs recorded from the real mnns (`demos/recorded.json`). Custom data needs LucianOS.
 
 The Prolog driver can also be run on its own:
