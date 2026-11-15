@@ -1,0 +1,402 @@
+MNN in Action: 200 inputs and outputs, from real runs (npm run ios writes this file; npm test checks it).
+
+1. optimise({"program":"choose(V) :- once((V = b ; V = c)).\nfirst(X) :- once(member(X, [1,11,20])).\npositive(X) :- integer(X), X > 1, !."})
+   => {"ok":true,"result":{"changed":true,"line":"MNN_OPTIMISE ok changed=true size_before=41 size_after=45 plop=unchanged simplify=0 detlog=proved detlog_steps=3","program":["choose(A) :-\n    (   (   A=b\n        ;   A=c\n        )\n    ->  true\n    ;   fail\n    ).","first(A) :-\n    (   member(A, [1, 11, 20])\n    ->  true\n    ;   fail\n    ).","positive(A) :-\n    integer(A),\n    A>1."]},"steps":["parse","size","plop","simplify","detlog","size","emit"]}
+2. loop2({"program":"score(cal0, 3).\nscore(fay1, 2).\npassed(Ns) :- findall(N, (score(N, S), S >= 3), Ns).","query":"passed(Ns)"})
+   => {"ok":true,"result":{"converted":["[[cal0]]"],"original":["[[cal0]]"],"same":true},"steps":["parse","find","walk","walk","convert","check"]}
+3. plop({"program":"p(X) :- true, q(X).\nq(12).\nq(16).\nq(6).\nr :- true, (fail ; s).\ns."})
+   => {"ok":true,"result":{"status":"unchanged","steps":["proof_step(1, identity, [], equivalent(domain(all), modes(all)))"]},"steps":["parse","candidates","proof","check"]}
+4. detlog({"program":"len([], 0).\nlen([_|T], N) :- len(T, N0), N is N0 + 1.\ncountdown(0).\ncountdown(N) :- integer(N), N > 0, M is N - 1, countdown(M)."})
+   => {"ok":true,"result":{"rows":[]},"steps":["parse","report"]}
+5. detlog_transform({"program":"choose(V) :- once((V = a ; V = c)).\nfirst(X) :- once(member(X, [9,5,4])).\npositive(X) :- integer(X), X > 1, !."})
+   => {"ok":true,"result":{"events":["compiled_once(choose/1, 1, disj(A=a, A=c))","compiled_once(first/1, 2, member(_, [9, 5, 4]))","removed_green_cut(positive/1, 3)"]},"steps":["parse","rewrite","rewrite","rewrite","check"]}
+6. pid({"program":"max(X, Y, X) :- X >= Y, !.\nmax(_, Y, Y).\nc(13).\nc(18)."})
+   => {"ok":true,"result":{"classes":[["max/3","non_recursive"],["c/1","non_recursive"]]},"steps":["parse","recursion","measure","induction","tail"]}
+7. s2a({"name":"contents","examples":[["box(red, [9,10])","[9,10]"],["box(red, [6,7])","[6,7]"],["box(green, [8,9])","[8,9]"]]})
+   => {"ok":true,"result":{"program":["contents(box(_, A), A)."],"solved_by":"s2a"},"steps":["examples","s2a","program","check"]}
+8. s2a2({"name":"len","examples":[["[3,9,6,-1]","4"],["[9,-2,9]","3"],["[]","0"]]})
+   => {"ok":true,"result":{"program":["len(A, B) :-\n    length(A, B)."],"solved_by":"s2a2"},"steps":["examples","s2a","program","check"]}
+9. s2a2_optimise({"pairs":[{"name":"col","targets":"[col/1]","before":"colour(c).\ncolour(c).\nq(X) :- colour(X).\ncol(X) :- q(X).","after":"colour(c).\ncolour(c).\nq(X) :- colour(X).\ncol(X) :- colour(X)."},{"name":"big","targets":"[big/1]","before":"size(e).\ns(X) :- size(X).\nbig(X) :- s(X).","after":"size(e).\ns(X) :- size(X).\nbig(X) :- size(X)."}],"name":"conn","targets":"[conn/2]","program":"edge(b, b).\ne(U, V) :- edge(U, V).\nconn(U, V) :- e(U, V)."})
+   => {"ok":true,"result":{"check":"accepted","verdict":"proved(exhaustive(2))"},"steps":["pairs","pairs","learn","apply","prove","check"]}
+10. s2a2_derive({"name":"sum","mode":"[in(list(int)), out]","bound":"","samples":"[[]]","program":"sum([], 0).\nsum([H|T], S) :- sum(T, S1), S is S1 + H."})
+   => {"ok":true,"result":{"check":"accepted","strategy":"accumulate"},"steps":["spec","derive","verify","check","run"]}
+11. algebraplop({"sequence":"1, 2, 4, 8, 16, 32","value":"64"})
+   => {"ok":true,"result":{"formula":"formula(exponential(1, 2), verified_on([1, 2, 4, 8, 16, 32]))","next":[[6,"64"],[7,"128"],[8,"256"]]},"steps":["samples","differences","formula","evaluate","invert"]}
+12. qi({"program":"squares(L) :- findall(Y, (between(1, 2, X), Y is X * X), L).","seed":"51"})
+   => {"ok":true,"result":{"qasm":"OPENQASM 3.0;\ninclude \"stdgates.inc\";\n// Schematic predicate-selection register; no execution.\nqubit[1] q;\nbit[1] c;\nh q[0];\nmeasure q[0] -> c[0];\n","selected":"original"},"steps":["parse","candidates","amplitude","amplitude","amplitude","select"]}
+13. aioc_compile({"kind":"dcg","name":"parser","source":"dcg(s, [(s --> [a], item, [q]), (item --> [z])])"})
+   => {"ok":true,"result":{"verdict":"accepted"},"steps":["source","compile","check"]}
+14. aioc_allocate({"quantum":"inspired","candidates":[{"name":"original","assessment":0,"cost":3,"amplitude":0}],"budgets":[{"resource":"time","amount":88},{"resource":"workers","amount":1}]})
+   => {"ok":true,"result":{"allocations":[["original","1","88","1"]]},"steps":["candidates","weights","divide"]}
+15. aioc_simplify({"program":"num(18).\nnum(16).\nvalues(Vs) :- findall(X, num(X), Vs)."})
+   => {"ok":true,"result":{"effect":"unchanged"},"steps":["parse","simplify","check"]}
+16. starlog({"program":"greet(S) :- S is \"logic\" : \" logic\"."})
+   => {"ok":true,"result":{"back":["greet(A) :-\n    A is \"logic\":\" logic\"."],"ir":["greet(A) :-\n    string_concat(\"logic\", \" logic\", A)."]},"steps":["parse","to_ir","back"]}
+17. problem("aioc_simplify", {"program":"p(X) :- true, q(X).\nq(1).\nq(2).\nr :- once(true), (fail ; s).\ns."})
+   => "ok"
+18. diffLines(["d.","d.","b.","b.","b."], ["d.","b.","b."])
+   => [{"text":"d.","kind":"same"},{"text":"d.","kind":"removed"},{"text":"b.","kind":"same"},{"text":"b.","kind":"same"},{"text":"b.","kind":"removed"}]
+19. linesAt("optimise", "emit")
+   => [7]
+20. barScale([{"label":"clauses","value":15},{"label":"goals","value":9},{"label":"predicates","value":6},{"label":"total","value":33}], [{"label":"clauses","value":36},{"label":"goals","value":21},{"label":"predicates","value":17},{"label":"total","value":28}])
+   => [{"label":"clauses","value":15,"width":0.416667,"was":36,"wasWidth":1},{"label":"goals","value":9,"width":0.25,"was":21,"wasWidth":0.583333},{"label":"predicates","value":6,"width":0.166667,"was":17,"wasWidth":0.472222},{"label":"total","value":33,"width":0.916667,"was":28,"wasWidth":0.777778}]
+21. flowState([[3,"no"],[7,"no"]], 0)
+   => {"seen":[],"current":null,"list":[],"rest":[[3,"no"],[7,"no"]]}
+22. optimise({"program":"squares(L) :- findall(Y, (between(1, 4, X), Y is X * X), L)."})
+   => {"ok":true,"result":{"changed":false,"line":"MNN_OPTIMISE ok changed=false size_before=11 size_after=11 plop=unchanged simplify=0 detlog=unchanged detlog_steps=0","program":["squares(A) :-\n    findall(B,\n            ( between(1, 4, C),\n              B is C*C\n            ),\n            A)."]},"steps":["parse","size","plop","simplify","detlog","size","emit"]}
+23. loop2({"program":"squares(L) :- findall(Y, (between(1, 5, X), Y is X * X), L).","query":"squares(L)"})
+   => {"ok":true,"result":{"converted":["[[1, 4, 9, 16, 25]]"],"original":["[[1, 4, 9, 16, 25]]"],"same":true},"steps":["parse","find","walk","walk","walk","walk","walk","convert","check"]}
+24. plop({"program":"squares(L) :- findall(Y, (between(1, 5, X), Y is X * X), L)."})
+   => {"ok":true,"result":{"status":"unchanged","steps":["proof_step(1, identity, [], equivalent(domain(all), modes(all)))"]},"steps":["parse","candidates","proof","check"]}
+25. detlog({"program":"score(ann0, 3).\nscore(dee1, 1).\nscore(cal2, 10).\nscore(fay3, 10).\npassed(Ns) :- findall(N, (score(N, S), S >= 3), Ns)."})
+   => {"ok":true,"result":{"rows":[["score/2","semidet","[0, 1]"]]},"steps":["parse","classify","report"]}
+26. detlog_transform({"program":"score(gus0, 6).\nscore(eve1, 1).\npassed(Ns) :- findall(N, (score(N, S), S >= 3), Ns)."})
+   => {"ok":true,"result":{"events":[]},"steps":["parse","rewrite","check"]}
+27. pid({"program":"num(5).\nnum(4).\nnum(13).\nvalues(Vs) :- findall(X, num(X), Vs)."})
+   => {"ok":true,"result":{"classes":[["num/1","non_recursive"],["values/1","non_recursive"]]},"steps":["parse","recursion","measure","induction","tail"]}
+28. s2a({"name":"contents","examples":[["box(red, [6,7])","[6,7]"],["box(green, [9,10])","[9,10]"],["box(blue, [0,1])","[0,1]"],["box(blue, [8,9])","[8,9]"]]})
+   => {"ok":true,"result":{"program":["contents(box(_, A), A)."],"solved_by":"s2a"},"steps":["examples","s2a","program","check"]}
+29. s2a2({"name":"evens","examples":[["[]","[]"],["[]","[]"],["[1,-3,3]","[]"]]})
+   => {"ok":true,"result":{"program":["evens(_, [])."],"solved_by":"s2a2"},"steps":["examples","s2a","program","check"]}
+30. s2a2_optimise({"pairs":[{"name":"col","targets":"[col/1]","before":"colour(e).\nq(X) :- colour(X).\ncol(X) :- q(X).","after":"colour(e).\nq(X) :- colour(X).\ncol(X) :- colour(X)."}],"name":"conn","targets":"[conn/2]","program":"edge(d, b).\nedge(d, a).\nedge(b, c).\ne(U, V) :- edge(U, V).\nconn(U, V) :- e(U, V)."})
+   => {"ok":true,"result":{"check":"accepted","verdict":"proved(exhaustive(512))"},"steps":["pairs","learn","apply","prove","check"]}
+31. s2a2_derive({"name":"rev","mode":"[in(list(any)), out]","bound":"3","samples":"[[-3,8,7,2], [2,-1], [-7]]","program":"rev([], []).\nrev([H|T], R) :- rev(T, R0), app(R0, [H], R).\napp([], A, A).\napp([X|Xs], B, [X|C]) :- app(Xs, B, C)."})
+   => {"ok":true,"result":{"check":"accepted","strategy":"accumulate"},"steps":["spec","derive","verify","check","run"]}
+32. algebraplop({"sequence":"-4, -1, 2","value":""})
+   => {"ok":true,"result":{"formula":"formula(linear(3, -4), verified_on([-4, -1, 2]))","next":[[3,"5"],[4,"8"],[5,"11"]]},"steps":["samples","differences","formula","evaluate"]}
+33. qi({"program":"squares(L) :- findall(Y, (between(1, 4, X), Y is X * X), L).","seed":"1"})
+   => {"ok":true,"result":{"qasm":"OPENQASM 3.0;\ninclude \"stdgates.inc\";\n// Schematic predicate-selection register; no execution.\nqubit[1] q;\nbit[1] c;\nh q[0];\nmeasure q[0] -> c[0];\n","selected":"original"},"steps":["parse","candidates","amplitude","amplitude","amplitude","select"]}
+34. aioc_compile({"kind":"dcg","name":"parser","source":"dcg(s, [(s --> [p], item, [b]), (item --> [y])])"})
+   => {"ok":true,"result":{"verdict":"accepted"},"steps":["source","compile","check"]}
+35. aioc_allocate({"quantum":"inspired","candidates":[{"name":"table","assessment":3,"cost":2,"amplitude":2}],"budgets":[{"resource":"time","amount":106},{"resource":"memory","amount":51},{"resource":"workers","amount":3}]})
+   => {"ok":true,"result":{"allocations":[["table","4","106","51","3"]]},"steps":["candidates","weights","divide"]}
+36. aioc_simplify({"program":"max(X, Y, X) :- X >= Y, !.\nmax(_, Y, Y).\nc(4).\nc(18)."})
+   => {"ok":true,"result":{"effect":"unchanged"},"steps":["parse","simplify","check"]}
+37. starlog({"program":"greet(S) :- S is \"green\" : \" logic\"."})
+   => {"ok":true,"result":{"back":["greet(A) :-\n    A is \"green\":\" logic\"."],"ir":["greet(A) :-\n    string_concat(\"green\", \" logic\", A)."]},"steps":["parse","to_ir","back"]}
+38. problem("aioc_compile", {"kind":"cfg","name":"balanced","source":"cfg(s, [rule(s, [terminal(a), nonterminal(s), terminal(b)]), rule(s, [])])"})
+   => "ok"
+39. diffLines(["a."], ["a.","b.","c.","a."])
+   => [{"text":"a.","kind":"same"},{"text":"b.","kind":"added"},{"text":"c.","kind":"added"},{"text":"a.","kind":"added"}]
+40. linesAt("detlog", "parse")
+   => [0]
+41. barScale([{"label":"clauses","value":12},{"label":"goals","value":38},{"label":"predicates","value":12},{"label":"total","value":16}], [])
+   => [{"label":"clauses","value":12,"width":0.315789,"was":null,"wasWidth":null},{"label":"goals","value":38,"width":1,"was":null,"wasWidth":null},{"label":"predicates","value":12,"width":0.315789,"was":null,"wasWidth":null},{"label":"total","value":16,"width":0.421053,"was":null,"wasWidth":null}]
+42. flowState([[6,"no"]], 1)
+   => {"seen":[[6,"no"]],"current":[6,"no"],"list":[],"rest":[]}
+43. optimise({"program":"max(X, Y, X) :- X >= Y, !.\nmax(_, Y, Y).\nc(3).\nc(9).\nc(19)."})
+   => {"ok":true,"result":{"changed":false,"line":"MNN_OPTIMISE ok changed=false size_before=29 size_after=29 plop=unchanged simplify=0 detlog=unchanged detlog_steps=0","program":["max(A, B, A) :-\n    A>=B,\n    !.","max(_, A, A).","c(3).","c(9).","c(19)."]},"steps":["parse","size","plop","simplify","detlog","size","emit"]}
+44. loop2({"program":"score(ann0, 6).\nscore(dee1, 5).\nscore(bob2, 8).\nscore(ann3, 4).\npassed(Ns) :- findall(N, (score(N, S), S >= 7), Ns).","query":"passed(Ns)"})
+   => {"ok":true,"result":{"converted":["[[bob2]]"],"original":["[[bob2]]"],"same":true},"steps":["parse","find","walk","walk","walk","walk","convert","check"]}
+45. plop({"program":"p(X) :- true, q(X).\nq(9).\nq(4).\nq(12).\nq(11).\nq(8).\nr :- true, (fail ; s).\ns."})
+   => {"ok":true,"result":{"status":"unchanged","steps":["proof_step(1, identity, [], equivalent(domain(all), modes(all)))"]},"steps":["parse","candidates","proof","check"]}
+46. detlog({"program":"num(1).\nnum(9).\nnum(4).\nvalues(Vs) :- findall(X, num(X), Vs)."})
+   => {"ok":true,"result":{"rows":[["num/1","semidet","[0, 1]"]]},"steps":["parse","classify","report"]}
+47. detlog_transform({"program":"squares(L) :- findall(Y, (between(1, 3, X), Y is X * X), L)."})
+   => {"ok":true,"result":{"events":[]},"steps":["parse","rewrite","check"]}
+48. pid({"program":"choose(V) :- once((V = a ; V = c)).\nfirst(X) :- once(member(X, [12,2,8,4])).\npositive(X) :- integer(X), X > 1, !."})
+   => {"ok":true,"result":{"classes":[["choose/1","non_recursive"],["first/1","non_recursive"],["positive/1","non_recursive"]]},"steps":["parse","recursion","measure","induction","tail"]}
+49. s2a({"name":"g","examples":[["9","-31"],["3","-13"],["6","-22"],["5","-19"]]})
+   => {"ok":true,"result":{"program":["g(A, B) :-\n    B is -3*A+ -4."],"solved_by":"s2a"},"steps":["examples","s2a","program","check"]}
+50. s2a2({"name":"evens","examples":[["[5,3,-3]","[]"],["[-2]","[-2]"],["[9,8,3]","[8]"]],"reference":"r([], []).\nr([X|Xs], R) :- ( X mod 2 =:= 0 -> R = [X|R1] ; R = R1 ), r(Xs, R1)."})
+   => {"ok":true,"result":{"program":["evens([], []).","evens([A|B], C) :-\n    (   evens_test(A)\n    ->  C=[A|D]\n    ;   C=D\n    ),\n    evens(B, D).","evens_test(A) :-\n    A mod 2<1."],"solved_by":"s2a2"},"steps":["examples","s2a","program","proof","check"]}
+51. s2a2_optimise({"pairs":[{"name":"col","targets":"[col/1]","before":"colour(e).\ncolour(e).\nq(X) :- colour(X).\ncol(X) :- q(X).","after":"colour(e).\ncolour(e).\nq(X) :- colour(X).\ncol(X) :- colour(X)."},{"name":"big","targets":"[big/1]","before":"size(d).\nsize(e).\ns(X) :- size(X).\nbig(X) :- s(X).","after":"size(d).\nsize(e).\ns(X) :- size(X).\nbig(X) :- size(X)."}],"name":"conn","targets":"[conn/2]","program":"edge(a, b).\nedge(d, a).\ne(U, V) :- edge(U, V).\nconn(U, V) :- e(U, V)."})
+   => {"ok":true,"result":{"check":"accepted","verdict":"proved(exhaustive(512))"},"steps":["pairs","pairs","learn","apply","prove","check"]}
+52. s2a2_derive({"name":"sum","mode":"[in(list(int)), out]","bound":"","samples":"[[]]","program":"sum([], 0).\nsum([H|T], S) :- sum(T, S1), S is S1 + H."})
+   => {"ok":true,"result":{"check":"accepted","strategy":"accumulate"},"steps":["spec","derive","verify","check","run"]}
+53. algebraplop({"sequence":"2, 7, 16, 29, 46","value":""})
+   => {"ok":true,"result":{"formula":"formula(quadratic(2, 5, 4), verified_on([2, 7, 16, 29, 46]))","next":[[5,"67"],[6,"92"],[7,"121"]]},"steps":["samples","differences","formula","evaluate"]}
+54. qi({"program":"squares(L) :- findall(Y, (between(1, 4, X), Y is X * X), L).","seed":"36"})
+   => {"ok":true,"result":{"qasm":"OPENQASM 3.0;\ninclude \"stdgates.inc\";\n// Schematic predicate-selection register; no execution.\nqubit[1] q;\nbit[1] c;\nh q[0];\nmeasure q[0] -> c[0];\n","selected":"original"},"steps":["parse","candidates","amplitude","amplitude","amplitude","select"]}
+55. aioc_compile({"kind":"dcg","name":"parser","source":"dcg(s, [(s --> [a], item, [q]), (item --> [y])])"})
+   => {"ok":true,"result":{"verdict":"accepted"},"steps":["source","compile","check"]}
+56. aioc_allocate({"quantum":"inspired","candidates":[{"name":"loop","assessment":1,"cost":2,"amplitude":1}],"budgets":[{"resource":"time","amount":63},{"resource":"memory","amount":27},{"resource":"workers","amount":3}]})
+   => {"ok":true,"result":{"allocations":[["loop","1","63","27","3"]]},"steps":["candidates","weights","divide"]}
+57. aioc_simplify({"program":"picks(L) :- findall(X, (member(X, [20,2,6]), X > 3), L)."})
+   => {"ok":true,"result":{"effect":"unchanged"},"steps":["parse","simplify","check"]}
+58. starlog({"program":"greet(S) :- S is \"world\" : \" logic\".\nboth(L) :- L is [world] & [logic]."})
+   => {"ok":true,"result":{"back":["greet(A) :-\n    A is \"world\":\" logic\".","both(A) :-\n    A is [world]&[logic]."],"ir":["greet(A) :-\n    string_concat(\"world\", \" logic\", A).","both(A) :-\n    append([world], [logic], A)."]},"steps":["parse","to_ir","back"]}
+59. problem("qi", {"program":"num(1).\nnum(2).\nnum(3).\nvalues(Vs) :- findall(X, num(X), Vs).\npairs(Ps) :- findall(X-Y, (num(X), num(Y), X < Y), Ps).","seed":"7"})
+   => "ok"
+60. diffLines(["b."], ["b.","f."])
+   => [{"text":"b.","kind":"same"},{"text":"f.","kind":"added"}]
+61. linesAt("loop2", "walk")
+   => [2,3]
+62. barScale([{"label":"clauses","value":16},{"label":"goals","value":11},{"label":"predicates","value":27},{"label":"total","value":9}], [{"label":"clauses","value":26},{"label":"goals","value":22},{"label":"predicates","value":40},{"label":"total","value":32}])
+   => [{"label":"clauses","value":16,"width":0.4,"was":26,"wasWidth":0.65},{"label":"goals","value":11,"width":0.275,"was":22,"wasWidth":0.55},{"label":"predicates","value":27,"width":0.675,"was":40,"wasWidth":1},{"label":"total","value":9,"width":0.225,"was":32,"wasWidth":0.8}]
+63. flowState([[5,"no"],[6,"yes"]], 1)
+   => {"seen":[[5,"no"]],"current":[5,"no"],"list":[],"rest":[[6,"yes"]]}
+64. optimise({"program":"len([], 0).\nlen([_|T], N) :- len(T, N0), N is N0 + 1.\ncountdown(2).\ncountdown(N) :- integer(N), N > 0, M is N - 1, countdown(M)."})
+   => {"ok":true,"result":{"changed":false,"line":"MNN_OPTIMISE ok changed=false size_before=43 size_after=43 plop=unchanged simplify=0 detlog=unchanged detlog_steps=0","program":["len([], 0).","len([_|A], B) :-\n    len(A, C),\n    B is C+1.","countdown(2).","countdown(A) :-\n    integer(A),\n    A>0,\n    B is A-1,\n    countdown(B)."]},"steps":["parse","size","plop","simplify","detlog","size","emit"]}
+65. loop2({"program":"squares(L) :- findall(Y, (between(1, 2, X), Y is X * X), L).","query":"squares(L)"})
+   => {"ok":true,"result":{"converted":["[[1, 4]]"],"original":["[[1, 4]]"],"same":true},"steps":["parse","find","walk","walk","convert","check"]}
+66. plop({"program":"num(17).\nnum(13).\nvalues(Vs) :- findall(X, num(X), Vs)."})
+   => {"ok":true,"result":{"status":"accepted","steps":["proof_step(1, findall_to_fold, [], equivalent(domain(supported_finite_generator_subset), modes(preserved)))"]},"steps":["parse","candidates","proof","check"]}
+67. detlog({"program":"num(12).\nnum(1).\nnum(5).\nvalues(Vs) :- findall(X, num(X), Vs)."})
+   => {"ok":true,"result":{"rows":[["num/1","semidet","[0, 1]"]]},"steps":["parse","classify","report"]}
+68. detlog_transform({"program":"max(X, Y, X) :- X >= Y, !.\nmax(_, Y, Y).\nc(4).\nc(8).\nc(1).\nc(13).\nc(14)."})
+   => {"ok":true,"result":{"events":[]},"steps":["parse","rewrite","check"]}
+69. pid({"program":"squares(L) :- findall(Y, (between(1, 2, X), Y is X * X), L)."})
+   => {"ok":true,"result":{"classes":[["squares/1","non_recursive"]]},"steps":["parse","recursion","measure","induction","tail"]}
+70. s2a({"name":"h","examples":[["4","41"],["9","186"],["8","149"]]})
+   => {"ok":true,"result":{"program":["h(A, B) :-\n    B is 2*A*A+3*A+ -3."],"solved_by":"s2a"},"steps":["examples","s2a","program","check"]}
+71. s2a2({"name":"evens","examples":[["[1,-1]","[]"],["[]","[]"],["[]","[]"]]})
+   => {"ok":true,"result":{"program":["evens(_, [])."],"solved_by":"s2a2"},"steps":["examples","s2a","program","check"]}
+72. s2a2_optimise({"pairs":[{"name":"col","targets":"[col/1]","before":"colour(a).\ncolour(d).\nq(X) :- colour(X).\ncol(X) :- q(X).","after":"colour(a).\ncolour(d).\nq(X) :- colour(X).\ncol(X) :- colour(X)."},{"name":"big","targets":"[big/1]","before":"size(e).\nsize(b).\nsize(d).\ns(X) :- size(X).\nbig(X) :- s(X).","after":"size(e).\nsize(b).\nsize(d).\ns(X) :- size(X).\nbig(X) :- size(X)."}],"name":"conn","targets":"[conn/2]","program":"edge(a, d).\nedge(b, a).\ne(U, V) :- edge(U, V).\nconn(U, V) :- e(U, V)."})
+   => {"ok":true,"result":{"check":"accepted","verdict":"proved(exhaustive(512))"},"steps":["pairs","pairs","learn","apply","prove","check"]}
+73. s2a2_derive({"name":"rev","mode":"[in(list(any)), out]","bound":"3","samples":"[[-8,-8,-8,-2]]","program":"rev([], []).\nrev([H|T], R) :- rev(T, R0), app(R0, [H], R).\napp([], A, A).\napp([X|Xs], B, [X|C]) :- app(Xs, B, C)."})
+   => {"ok":true,"result":{"check":"accepted","strategy":"accumulate"},"steps":["spec","derive","verify","check","run"]}
+74. algebraplop({"sequence":"2, 4, 8, 16","value":"256"})
+   => {"ok":true,"result":{"formula":"formula(exponential(2, 2), verified_on([2, 4, 8, 16]))","next":[[4,"32"],[5,"64"],[6,"128"]]},"steps":["samples","differences","formula","evaluate","invert"]}
+75. qi({"program":"picks(L) :- findall(X, (member(X, [15,2,9]), X > 7), L).","seed":"70"})
+   => {"ok":false,"error":"mnns found nothing to show for this input (qi)."}
+76. aioc_compile({"kind":"dcg","name":"parser","source":"dcg(s, [(s --> [p], item, [b]), (item --> [z])])"})
+   => {"ok":true,"result":{"verdict":"accepted"},"steps":["source","compile","check"]}
+77. aioc_allocate({"quantum":"off","candidates":[{"name":"original","assessment":0,"cost":2,"amplitude":0},{"name":"memo","assessment":0,"cost":1,"amplitude":1}],"budgets":[{"resource":"time","amount":36},{"resource":"workers","amount":1}]})
+   => {"ok":true,"result":{"allocations":[["memo","1","18","1"],["original","1","18","0"]]},"steps":["candidates","weights","divide"]}
+78. aioc_simplify({"program":"picks(L) :- findall(X, (member(X, [6,14]), X > 13), L)."})
+   => {"ok":true,"result":{"effect":"unchanged"},"steps":["parse","simplify","check"]}
+79. starlog({"program":"greet(S) :- S is \"tree\" : \" green\"."})
+   => {"ok":true,"result":{"back":["greet(A) :-\n    A is \"tree\":\" green\"."],"ir":["greet(A) :-\n    string_concat(\"tree\", \" green\", A)."]},"steps":["parse","to_ir","back"]}
+80. problem("starlog", {"program":" "})
+   => "Write a program first."
+81. diffLines(["c.","a.","b."], ["b.","c.","c.","f."])
+   => [{"text":"c.","kind":"removed"},{"text":"a.","kind":"removed"},{"text":"b.","kind":"same"},{"text":"c.","kind":"added"},{"text":"c.","kind":"added"},{"text":"f.","kind":"added"}]
+82. linesAt("algebraplop", "nowhere")
+   => []
+83. barScale([{"label":"clauses","value":30},{"label":"goals","value":30},{"label":"predicates","value":13},{"label":"total","value":36}], [])
+   => [{"label":"clauses","value":30,"width":0.833333,"was":null,"wasWidth":null},{"label":"goals","value":30,"width":0.833333,"was":null,"wasWidth":null},{"label":"predicates","value":13,"width":0.361111,"was":null,"wasWidth":null},{"label":"total","value":36,"width":1,"was":null,"wasWidth":null}]
+84. flowState([[4,"no"],[9,"no"],[1,"no"]], 1)
+   => {"seen":[[4,"no"]],"current":[4,"no"],"list":[],"rest":[[9,"no"],[1,"no"]]}
+85. optimise({"program":"choose(V) :- once((V = b ; V = c)).\nfirst(X) :- once(member(X, [3,9,10])).\npositive(X) :- integer(X), X > 2, !."})
+   => {"ok":true,"result":{"changed":true,"line":"MNN_OPTIMISE ok changed=true size_before=41 size_after=45 plop=unchanged simplify=0 detlog=proved detlog_steps=3","program":["choose(A) :-\n    (   (   A=b\n        ;   A=c\n        )\n    ->  true\n    ;   fail\n    ).","first(A) :-\n    (   member(A, [3, 9, 10])\n    ->  true\n    ;   fail\n    ).","positive(A) :-\n    integer(A),\n    A>2."]},"steps":["parse","size","plop","simplify","detlog","size","emit"]}
+86. loop2({"program":"num(20).\nnum(11).\nvalues(Vs) :- findall(X, num(X), Vs).","query":"values(Vs)"})
+   => {"ok":true,"result":{"converted":["[[20, 11]]"],"original":["[[20, 11]]"],"same":true},"steps":["parse","find","walk","walk","convert","check"]}
+87. plop({"program":"p(X) :- true, q(X).\nq(17).\nq(16).\nq(19).\nq(18).\nq(14).\nr :- once(true), (fail ; s).\ns."})
+   => {"ok":true,"result":{"status":"unchanged","steps":["proof_step(1, identity, [], equivalent(domain(all), modes(all)))"]},"steps":["parse","candidates","proof","check"]}
+88. detlog({"program":"squares(L) :- findall(Y, (between(1, 3, X), Y is X * X), L)."})
+   => {"ok":true,"result":{"rows":[]},"steps":["parse","report"]}
+89. detlog_transform({"program":"p(X) :- true, q(X).\nq(3).\nq(1).\nq(9).\nr :- once(true), (fail ; s).\ns."})
+   => {"ok":true,"result":{"events":["compiled_once(r/0, 5, true)"]},"steps":["parse","rewrite","check"]}
+90. pid({"program":"squares(L) :- findall(Y, (between(1, 4, X), Y is X * X), L)."})
+   => {"ok":true,"result":{"classes":[["squares/1","non_recursive"]]},"steps":["parse","recursion","measure","induction","tail"]}
+91. s2a({"name":"f","examples":[["4","2"],["1","-1"],["2","0"]]})
+   => {"ok":true,"result":{"program":["f(A, B) :-\n    B is 1*A+ -2."],"solved_by":"s2a"},"steps":["examples","s2a","program","check"]}
+92. s2a2({"name":"rev","examples":[["[4]","[4]"],["[-3]","[-3]"],["[-3,-2,8,-1]","[-1,8,-2,-3]"]]})
+   => {"ok":true,"result":{"program":["rev(A, B) :-\n    reverse(A, B)."],"solved_by":"s2a2"},"steps":["examples","s2a","program","check"]}
+93. s2a2_optimise({"pairs":[{"name":"col","targets":"[col/1]","before":"colour(b).\ncolour(b).\ncolour(b).\nq(X) :- colour(X).\ncol(X) :- q(X).","after":"colour(b).\ncolour(b).\ncolour(b).\nq(X) :- colour(X).\ncol(X) :- colour(X)."}],"name":"conn","targets":"[conn/2]","program":"edge(c, c).\nedge(a, c).\nedge(b, d).\ne(U, V) :- edge(U, V).\nconn(U, V) :- e(U, V)."})
+   => {"ok":true,"result":{"check":"accepted","verdict":"proved(exhaustive(512))"},"steps":["pairs","learn","apply","prove","check"]}
+94. s2a2_derive({"name":"sum","mode":"[in(list(int)), out]","bound":"","samples":"[[-1,-4,3,5]]","program":"sum([], 0).\nsum([H|T], S) :- sum(T, S1), S is S1 + H."})
+   => {"ok":true,"result":{"check":"accepted","strategy":"accumulate"},"steps":["spec","derive","verify","check","run"]}
+95. algebraplop({"sequence":"3, 4, 11","value":"128"})
+   => {"ok":true,"result":{"formula":"none","next":[]},"steps":["samples","differences","formula"]}
+96. qi({"program":"num(20).\nnum(11).\nnum(9).\nvalues(Vs) :- findall(X, num(X), Vs).","seed":"41"})
+   => {"ok":true,"result":{"qasm":"OPENQASM 3.0;\ninclude \"stdgates.inc\";\n// Schematic predicate-selection register; no execution.\nqubit[2] q;\nbit[2] c;\nh q[0];\nmeasure q[0] -> c[0];\nh q[1];\nmeasure q[1] -> c[1];\n","selected":"original"},"steps":["parse","candidates","amplitude","amplitude","amplitude","amplitude","select"]}
+97. aioc_compile({"kind":"dtree","name":"classify","source":"dtree(integer(Input), dtree(Input < 3, leaf(low), dtree(Input =< 9, leaf(middle), leaf(high))), leaf(non_integer))"})
+   => {"ok":true,"result":{"verdict":"accepted"},"steps":["source","compile","check"]}
+98. aioc_allocate({"quantum":"inspired","candidates":[{"name":"fold","assessment":0,"cost":0,"amplitude":1}],"budgets":[{"resource":"time","amount":18},{"resource":"workers","amount":2}]})
+   => {"ok":true,"result":{"allocations":[["fold","2","18","2"]]},"steps":["candidates","weights","divide"]}
+99. aioc_simplify({"program":"len([], 0).\nlen([_|T], N) :- len(T, N0), N is N0 + 1.\ncountdown(1).\ncountdown(N) :- integer(N), N > 0, M is N - 1, countdown(M)."})
+   => {"ok":true,"result":{"effect":"unchanged"},"steps":["parse","simplify","check"]}
+100. starlog({"program":"greet(S) :- S is \"tree\" : \" world\".\nboth(L) :- L is [tree] & [world].\nname(A) :- A is tree • world."})
+   => {"ok":true,"result":{"back":["greet(A) :-\n    A is \"tree\":\" world\".","both(A) :-\n    A is [tree]&[world].","name(A) :-\n    A is tree•world."],"ir":["greet(A) :-\n    string_concat(\"tree\", \" world\", A).","both(A) :-\n    append([tree], [world], A).","name(A) :-\n    atom_concat(tree, world, A)."]},"steps":["parse","to_ir","back"]}
+101. problem("s2a", {"name":"sq","examples":[]})
+   => "Give at least one example (two or more for s2a)."
+102. diffLines(["d.","d.","d."], ["b.","b."])
+   => [{"text":"d.","kind":"removed"},{"text":"d.","kind":"removed"},{"text":"d.","kind":"removed"},{"text":"b.","kind":"added"},{"text":"b.","kind":"added"}]
+103. linesAt("qi", "select")
+   => [3]
+104. barScale([{"label":"clauses","value":15},{"label":"goals","value":32},{"label":"predicates","value":28},{"label":"total","value":0}], [])
+   => [{"label":"clauses","value":15,"width":0.46875,"was":null,"wasWidth":null},{"label":"goals","value":32,"width":1,"was":null,"wasWidth":null},{"label":"predicates","value":28,"width":0.875,"was":null,"wasWidth":null},{"label":"total","value":0,"width":0,"was":null,"wasWidth":null}]
+105. flowState([[7,"yes"],[2,"no"],[4,"no"],[3,"no"],[2,"no"]], 0)
+   => {"seen":[],"current":null,"list":[],"rest":[[7,"yes"],[2,"no"],[4,"no"],[3,"no"],[2,"no"]]}
+106. optimise({"program":"picks(L) :- findall(X, (member(X, [6,9,15]), X > 3), L)."})
+   => {"ok":true,"result":{"changed":false,"line":"MNN_OPTIMISE ok changed=false size_before=16 size_after=16 plop=unchanged simplify=0 detlog=unchanged detlog_steps=0","program":["picks(A) :-\n    findall(B,\n            ( member(B, [6, 9, 15]),\n              B>3\n            ),\n            A)."]},"steps":["parse","size","plop","simplify","detlog","size","emit"]}
+107. loop2({"program":"num(5).\nnum(15).\nvalues(Vs) :- findall(X, num(X), Vs).","query":"values(Vs)"})
+   => {"ok":true,"result":{"converted":["[[5, 15]]"],"original":["[[5, 15]]"],"same":true},"steps":["parse","find","walk","walk","convert","check"]}
+108. plop({"program":"len([], 0).\nlen([_|T], N) :- len(T, N0), N is N0 + 1.\ncountdown(1).\ncountdown(N) :- integer(N), N > 0, M is N - 1, countdown(M)."})
+   => {"ok":true,"result":{"status":"unchanged","steps":["proof_step(1, identity, [], equivalent(domain(all), modes(all)))"]},"steps":["parse","candidates","proof","check"]}
+109. detlog({"program":"max(X, Y, X) :- X >= Y, !.\nmax(_, Y, Y).\nc(14).\nc(13)."})
+   => {"ok":true,"result":{"rows":[["c/1","semidet","[0, 1]"]]},"steps":["parse","classify","report"]}
+110. detlog_transform({"program":"p(X) :- true, q(X).\nq(16).\nq(18).\nq(12).\nr :- true, (fail ; s).\ns."})
+   => {"ok":true,"result":{"events":[]},"steps":["parse","rewrite","check"]}
+111. pid({"program":"len([], 0).\nlen([_|T], N) :- len(T, N0), N is N0 + 1.\ncountdown(0).\ncountdown(N) :- integer(N), N > 0, M is N - 1, countdown(M)."})
+   => {"ok":true,"result":{"classes":[["len/2","recursive"],["countdown/1","recursive"]]},"steps":["parse","recursion","measure","induction","tail"]}
+112. s2a({"name":"g","examples":[["7","-13"],["8","-15"],["5","-9"],["2","-3"],["9","-17"]]})
+   => {"ok":true,"result":{"program":["g(A, B) :-\n    B is -2*A+1."],"solved_by":"s2a"},"steps":["examples","s2a","program","check"]}
+113. s2a2({"name":"evens","examples":[["[6,0,6]","[6,0,6]"],["[8,0]","[8,0]"],["[1]","[]"]],"reference":"r([], []).\nr([X|Xs], R) :- ( X mod 2 =:= 0 -> R = [X|R1] ; R = R1 ), r(Xs, R1)."})
+   => {"ok":true,"result":{"program":["evens([], []).","evens([A|B], C) :-\n    (   evens_test(A)\n    ->  C=[A|D]\n    ;   C=D\n    ),\n    evens(B, D).","evens_test(A) :-\n    A=\\=1."],"solved_by":"s2a2"},"steps":["examples","s2a","program","check"]}
+114. s2a2_optimise({"pairs":[{"name":"col","targets":"[col/1]","before":"colour(a).\nq(X) :- colour(X).\ncol(X) :- q(X).","after":"colour(a).\nq(X) :- colour(X).\ncol(X) :- colour(X)."}],"name":"conn","targets":"[conn/2]","program":"edge(c, a).\nedge(d, d).\nedge(a, c).\ne(U, V) :- edge(U, V).\nconn(U, V) :- e(U, V)."})
+   => {"ok":true,"result":{"check":"accepted","verdict":"proved(exhaustive(512))"},"steps":["pairs","learn","apply","prove","check"]}
+115. s2a2_derive({"name":"flat2","mode":"[in(list(list(any))), out]","bound":"2","samples":"[[[4,9],[4]], [[], [a]]]","program":"flat2([], []).\nflat2([L|Ls], F) :- flat2(Ls, F0), app(L, F0, F).\napp([], A, A).\napp([X|Xs], B, [X|C]) :- app(Xs, B, C)."})
+   => {"ok":true,"result":{"check":"accepted","strategy":"fuse"},"steps":["spec","derive","verify","check","run"]}
+116. algebraplop({"sequence":"2, 4, 8, 16","value":""})
+   => {"ok":true,"result":{"formula":"formula(exponential(2, 2), verified_on([2, 4, 8, 16]))","next":[[4,"32"],[5,"64"],[6,"128"]]},"steps":["samples","differences","formula","evaluate"]}
+117. qi({"program":"picks(L) :- findall(X, (member(X, [7,1,15,2,3]), X > 14), L).","seed":"80"})
+   => {"ok":false,"error":"mnns found nothing to show for this input (qi)."}
+118. aioc_compile({"kind":"dtree","name":"classify","source":"dtree(integer(Input), dtree(Input < 2, leaf(low), dtree(Input =< 8, leaf(middle), leaf(high))), leaf(non_integer))"})
+   => {"ok":true,"result":{"verdict":"accepted"},"steps":["source","compile","check"]}
+119. aioc_allocate({"quantum":"inspired","candidates":[{"name":"original","assessment":2,"cost":0,"amplitude":1}],"budgets":[{"resource":"time","amount":101},{"resource":"memory","amount":62},{"resource":"workers","amount":1}]})
+   => {"ok":true,"result":{"allocations":[["original","6","101","62","1"]]},"steps":["candidates","weights","divide"]}
+120. aioc_simplify({"program":"squares(L) :- findall(Y, (between(1, 2, X), Y is X * X), L)."})
+   => {"ok":true,"result":{"effect":"unchanged"},"steps":["parse","simplify","check"]}
+121. starlog({"program":"greet(S) :- S is \"tree\" : \" tree\".\nboth(L) :- L is [tree] & [tree]."})
+   => {"ok":true,"result":{"back":["greet(A) :-\n    A is \"tree\":\" tree\".","both(A) :-\n    A is [tree]&[tree]."],"ir":["greet(A) :-\n    string_concat(\"tree\", \" tree\", A).","both(A) :-\n    append([tree], [tree], A)."]},"steps":["parse","to_ir","back"]}
+122. problem("loop2", {"program":" ","query":"values(Vs)"})
+   => "Write a program first."
+123. diffLines(["c."], ["a.","f.","b.","c."])
+   => [{"text":"a.","kind":"added"},{"text":"f.","kind":"added"},{"text":"b.","kind":"added"},{"text":"c.","kind":"same"}]
+124. linesAt("s2a", "s2a")
+   => [1]
+125. barScale([{"label":"clauses","value":37},{"label":"goals","value":14},{"label":"predicates","value":17},{"label":"total","value":19}], [])
+   => [{"label":"clauses","value":37,"width":1,"was":null,"wasWidth":null},{"label":"goals","value":14,"width":0.378378,"was":null,"wasWidth":null},{"label":"predicates","value":17,"width":0.459459,"was":null,"wasWidth":null},{"label":"total","value":19,"width":0.513514,"was":null,"wasWidth":null}]
+126. flowState([[7,"no"],[3,"no"],[8,"no"],[2,"yes"],[8,"no"]], 4)
+   => {"seen":[[7,"no"],[3,"no"],[8,"no"],[2,"yes"]],"current":[2,"yes"],"list":[2],"rest":[[8,"no"]]}
+127. optimise({"program":"score(dee0, 4).\nscore(dee1, 5).\nscore(bob2, 10).\npassed(Ns) :- findall(N, (score(N, S), S >= 4), Ns)."})
+   => {"ok":true,"result":{"changed":false,"line":"MNN_OPTIMISE ok changed=false size_before=28 size_after=28 plop=unchanged simplify=0 detlog=unchanged detlog_steps=0","program":["score(dee0, 4).","score(dee1, 5).","score(bob2, 10).","passed(A) :-\n    findall(B,\n            ( score(B, C),\n              C>=4\n            ),\n            A)."]},"steps":["parse","size","plop","simplify","detlog","size","emit"]}
+128. loop2({"program":"picks(L) :- findall(X, (member(X, [14,2,17,18]), X > 8), L).","query":"picks(L)"})
+   => {"ok":true,"result":{"converted":["[[14, 17, 18]]"],"original":["[[14, 17, 18]]"],"same":true},"steps":["parse","find","walk","walk","walk","walk","convert","check"]}
+129. plop({"program":"score(dee0, 3).\nscore(eve1, 6).\nscore(ann2, 3).\nscore(eve3, 3).\npassed(Ns) :- findall(N, (score(N, S), S >= 5), Ns)."})
+   => {"ok":true,"result":{"status":"unchanged","steps":["proof_step(1, identity, [], equivalent(domain(all), modes(all)))"]},"steps":["parse","candidates","proof","check"]}
+130. detlog({"program":"score(fay0, 1).\nscore(ann1, 8).\nscore(bob2, 4).\nscore(gus3, 8).\npassed(Ns) :- findall(N, (score(N, S), S >= 4), Ns)."})
+   => {"ok":true,"result":{"rows":[["score/2","semidet","[0, 1]"]]},"steps":["parse","classify","report"]}
+131. detlog_transform({"program":"score(fay0, 10).\nscore(dee1, 9).\npassed(Ns) :- findall(N, (score(N, S), S >= 4), Ns)."})
+   => {"ok":true,"result":{"events":[]},"steps":["parse","rewrite","check"]}
+132. pid({"program":"len([], 0).\nlen([_|T], N) :- len(T, N0), N is N0 + 1.\ncountdown(1).\ncountdown(N) :- integer(N), N > 0, M is N - 1, countdown(M)."})
+   => {"ok":true,"result":{"classes":[["len/2","recursive"],["countdown/1","recursive"]]},"steps":["parse","recursion","measure","induction","tail"]}
+133. s2a({"name":"contents","examples":[["box(green, [6,7])","[6,7]"],["box(green, [4,5])","[4,5]"],["box(green, [8,9])","[8,9]"]]})
+   => {"ok":true,"result":{"program":["contents(box(_, A), A)."],"solved_by":"s2a"},"steps":["examples","s2a","program","check"]}
+134. s2a2({"name":"sum","examples":[["[]","0"],["[8,3,2,-3]","10"],["[-3,6,6]","9"],["[6,2,0,8]","16"]]})
+   => {"ok":true,"result":{"program":["sum(A, B) :-\n    sum_list(A, B)."],"solved_by":"s2a2"},"steps":["examples","s2a","program","check"]}
+135. s2a2_optimise({"pairs":[{"name":"col","targets":"[col/1]","before":"colour(b).\nq(X) :- colour(X).\ncol(X) :- q(X).","after":"colour(b).\nq(X) :- colour(X).\ncol(X) :- colour(X)."},{"name":"big","targets":"[big/1]","before":"size(a).\ns(X) :- size(X).\nbig(X) :- s(X).","after":"size(a).\ns(X) :- size(X).\nbig(X) :- size(X)."}],"name":"conn","targets":"[conn/2]","program":"edge(a, a).\nedge(d, b).\ne(U, V) :- edge(U, V).\nconn(U, V) :- e(U, V)."})
+   => {"ok":true,"result":{"check":"accepted","verdict":"proved(exhaustive(512))"},"steps":["pairs","pairs","learn","apply","prove","check"]}
+136. s2a2_derive({"name":"sum","mode":"[in(list(int)), out]","bound":"","samples":"[[8,-2,5]]","program":"sum([], 0).\nsum([H|T], S) :- sum(T, S1), S is S1 + H."})
+   => {"ok":true,"result":{"check":"accepted","strategy":"accumulate"},"steps":["spec","derive","verify","check","run"]}
+137. algebraplop({"sequence":"1, 2, 9, 28","value":"513"})
+   => {"ok":true,"result":{"formula":"none","next":[]},"steps":["samples","differences","formula"]}
+138. qi({"program":"squares(L) :- findall(Y, (between(1, 7, X), Y is X * X), L).","seed":"86"})
+   => {"ok":true,"result":{"qasm":"OPENQASM 3.0;\ninclude \"stdgates.inc\";\n// Schematic predicate-selection register; no execution.\nqubit[1] q;\nbit[1] c;\nh q[0];\nmeasure q[0] -> c[0];\n","selected":"original"},"steps":["parse","candidates","amplitude","amplitude","amplitude","select"]}
+139. aioc_compile({"kind":"dcg","name":"parser","source":"dcg(s, [(s --> [p], item, [b]), (item --> [x])])"})
+   => {"ok":true,"result":{"verdict":"accepted"},"steps":["source","compile","check"]}
+140. aioc_allocate({"quantum":"off","candidates":[{"name":"fold","assessment":2,"cost":1,"amplitude":1},{"name":"memo","assessment":3,"cost":1,"amplitude":1}],"budgets":[{"resource":"time","amount":52},{"resource":"memory","amount":40},{"resource":"workers","amount":3}]})
+   => {"ok":true,"result":{"allocations":[["fold","1","17","13","1"],["memo","2","35","27","2"]]},"steps":["candidates","weights","divide"]}
+141. aioc_simplify({"program":"squares(L) :- findall(Y, (between(1, 6, X), Y is X * X), L)."})
+   => {"ok":true,"result":{"effect":"unchanged"},"steps":["parse","simplify","check"]}
+142. starlog({"program":"greet(S) :- S is \"green\" : \" hello\"."})
+   => {"ok":true,"result":{"back":["greet(A) :-\n    A is \"green\":\" hello\"."],"ir":["greet(A) :-\n    string_concat(\"green\", \" hello\", A)."]},"steps":["parse","to_ir","back"]}
+143. problem("s2a2_optimise", {"pairs":[{"name":"col","targets":"[col/1]","before":"colour(red).\ncolour(blue).\nq(X) :- colour(X).\ncol(X) :- q(X).","after":"colour(red).\ncolour(blue).\nq(X) :- colour(X).\ncol(X) :- colour(X)."},{"name":"big","targets":"[big/1]","before":"size(s1).\nsize(s2).\nsize(s3).\ns(Y) :- size(Y).\nbig(Y) :- s(Y).","after":"size(s1).\nsize(s2).\nsize(s3).\ns(Y) :- size(Y).\nbig(Y) :- size(Y)."}],"name":"conn","targets":"[conn/2]","program":" "})
+   => "Write the program to apply the algorithm to."
+144. diffLines(["b.","b.","c.","c."], ["b.","b.","c.","f."])
+   => [{"text":"b.","kind":"same"},{"text":"b.","kind":"same"},{"text":"c.","kind":"same"},{"text":"c.","kind":"removed"},{"text":"f.","kind":"added"}]
+145. linesAt("detlog_transform", "parse")
+   => [0]
+146. barScale([{"label":"clauses","value":30},{"label":"goals","value":32},{"label":"predicates","value":18},{"label":"total","value":6}], [])
+   => [{"label":"clauses","value":30,"width":0.9375,"was":null,"wasWidth":null},{"label":"goals","value":32,"width":1,"was":null,"wasWidth":null},{"label":"predicates","value":18,"width":0.5625,"was":null,"wasWidth":null},{"label":"total","value":6,"width":0.1875,"was":null,"wasWidth":null}]
+147. flowState([[6,"no"],[1,"yes"]], 0)
+   => {"seen":[],"current":null,"list":[],"rest":[[6,"no"],[1,"yes"]]}
+148. optimise({"program":"score(gus0, 4).\nscore(gus1, 10).\npassed(Ns) :- findall(N, (score(N, S), S >= 5), Ns)."})
+   => {"ok":true,"result":{"changed":false,"line":"MNN_OPTIMISE ok changed=false size_before=22 size_after=22 plop=unchanged simplify=0 detlog=unchanged detlog_steps=0","program":["score(gus0, 4).","score(gus1, 10).","passed(A) :-\n    findall(B,\n            ( score(B, C),\n              C>=5\n            ),\n            A)."]},"steps":["parse","size","plop","simplify","detlog","size","emit"]}
+149. loop2({"program":"squares(L) :- findall(Y, (between(1, 3, X), Y is X * X), L).","query":"squares(L)"})
+   => {"ok":true,"result":{"converted":["[[1, 4, 9]]"],"original":["[[1, 4, 9]]"],"same":true},"steps":["parse","find","walk","walk","walk","convert","check"]}
+150. plop({"program":"p(X) :- true, q(X).\nq(19).\nq(3).\nq(12).\nq(5).\nr :- once(true), (fail ; s).\ns."})
+   => {"ok":true,"result":{"status":"unchanged","steps":["proof_step(1, identity, [], equivalent(domain(all), modes(all)))"]},"steps":["parse","candidates","proof","check"]}
+151. detlog({"program":"p(X) :- true, q(X).\nq(15).\nq(8).\nr :- true, (fail ; s).\ns."})
+   => {"ok":true,"result":{"rows":[["p/1","multi","[2]"],["q/1","semidet","[0, 1]"],["r/0","det","[1]"],["s/0","det","[1]"]]},"steps":["parse","classify","classify","classify","classify","report"]}
+152. detlog_transform({"program":"picks(L) :- findall(X, (member(X, [16]), X > 5), L)."})
+   => {"ok":true,"result":{"events":[]},"steps":["parse","rewrite","check"]}
+153. pid({"program":"squares(L) :- findall(Y, (between(1, 6, X), Y is X * X), L)."})
+   => {"ok":true,"result":{"classes":[["squares/1","non_recursive"]]},"steps":["parse","recursion","measure","induction","tail"]}
+154. s2a({"name":"f","examples":[["6","-5"],["4","-3"],["0","1"]]})
+   => {"ok":true,"result":{"program":["f(A, B) :-\n    B is -1*A+1."],"solved_by":"s2a"},"steps":["examples","s2a","program","check"]}
+155. s2a2({"name":"evens","examples":[["[]","[]"],["[]","[]"],["[]","[]"],["[]","[]"]],"reference":"r([], []).\nr([X|Xs], R) :- ( X mod 2 =:= 0 -> R = [X|R1] ; R = R1 ), r(Xs, R1)."})
+   => {"ok":true,"result":{"program":["evens(_, [])."],"solved_by":"s2a2"},"steps":["examples","s2a","program","check"]}
+156. s2a2_optimise({"pairs":[{"name":"col","targets":"[col/1]","before":"colour(c).\ncolour(d).\nq(X) :- colour(X).\ncol(X) :- q(X).","after":"colour(c).\ncolour(d).\nq(X) :- colour(X).\ncol(X) :- colour(X)."},{"name":"big","targets":"[big/1]","before":"size(b).\ns(X) :- size(X).\nbig(X) :- s(X).","after":"size(b).\ns(X) :- size(X).\nbig(X) :- size(X)."}],"name":"conn","targets":"[conn/2]","program":"edge(c, d).\ne(U, V) :- edge(U, V).\nconn(U, V) :- e(U, V)."})
+   => {"ok":true,"result":{"check":"accepted","verdict":"proved(exhaustive(16))"},"steps":["pairs","pairs","learn","apply","prove","check"]}
+157. s2a2_derive({"name":"rev","mode":"[in(list(any)), out]","bound":"3","samples":"[[3,5], [-9,9], [5,-1,-1]]","program":"rev([], []).\nrev([H|T], R) :- rev(T, R0), app(R0, [H], R).\napp([], A, A).\napp([X|Xs], B, [X|C]) :- app(Xs, B, C)."})
+   => {"ok":true,"result":{"check":"accepted","strategy":"accumulate"},"steps":["spec","derive","verify","check","run"]}
+158. algebraplop({"sequence":"5, 7, 9","value":"11"})
+   => {"ok":true,"result":{"formula":"formula(linear(2, 5), verified_on([5, 7, 9]))","next":[[3,"11"],[4,"13"],[5,"15"]]},"steps":["samples","differences","formula","evaluate","invert"]}
+159. qi({"program":"score(cal0, 6).\nscore(eve1, 2).\nscore(dee2, 1).\nscore(eve3, 9).\npassed(Ns) :- findall(N, (score(N, S), S >= 6), Ns).","seed":"87"})
+   => {"ok":false,"error":"mnns found nothing to show for this input (qi)."}
+160. aioc_compile({"kind":"dtree","name":"classify","source":"dtree(integer(Input), dtree(Input < 3, leaf(low), dtree(Input =< 9, leaf(middle), leaf(high))), leaf(non_integer))"})
+   => {"ok":true,"result":{"verdict":"accepted"},"steps":["source","compile","check"]}
+161. aioc_allocate({"quantum":"off","candidates":[{"name":"fold","assessment":2,"cost":0,"amplitude":2}],"budgets":[{"resource":"time","amount":115},{"resource":"memory","amount":47},{"resource":"workers","amount":3}]})
+   => {"ok":true,"result":{"allocations":[["fold","3","115","47","3"]]},"steps":["candidates","weights","divide"]}
+162. aioc_simplify({"program":"p(X) :- true, q(X).\nq(10).\nq(12).\nq(11).\nr :- true, (fail ; s).\ns."})
+   => {"ok":true,"result":{"effect":"smaller"},"steps":["parse","simplify","check"]}
+163. starlog({"program":"greet(S) :- S is \"tree\" : \" green\".\nboth(L) :- L is [tree] & [green]."})
+   => {"ok":true,"result":{"back":["greet(A) :-\n    A is \"tree\":\" green\".","both(A) :-\n    A is [tree]&[green]."],"ir":["greet(A) :-\n    string_concat(\"tree\", \" green\", A).","both(A) :-\n    append([tree], [green], A)."]},"steps":["parse","to_ir","back"]}
+164. problem("plop", {"program":" "})
+   => "Write a program first."
+165. diffLines(["b.","b.","a."], ["b.","b.","a."])
+   => [{"text":"b.","kind":"same"},{"text":"b.","kind":"same"},{"text":"a.","kind":"same"}]
+166. linesAt("s2a2_optimise", "nowhere")
+   => []
+167. barScale([{"label":"clauses","value":27},{"label":"goals","value":19},{"label":"predicates","value":31},{"label":"total","value":14}], [])
+   => [{"label":"clauses","value":27,"width":0.870968,"was":null,"wasWidth":null},{"label":"goals","value":19,"width":0.612903,"was":null,"wasWidth":null},{"label":"predicates","value":31,"width":1,"was":null,"wasWidth":null},{"label":"total","value":14,"width":0.451613,"was":null,"wasWidth":null}]
+168. flowState([[5,"yes"],[4,"no"],[6,"yes"],[7,"no"]], 1)
+   => {"seen":[[5,"yes"]],"current":[5,"yes"],"list":[5],"rest":[[4,"no"],[6,"yes"],[7,"no"]]}
+169. optimise({"program":"num(13).\nnum(7).\nnum(6).\nnum(9).\nvalues(Vs) :- findall(X, num(X), Vs)."})
+   => {"ok":true,"result":{"changed":true,"line":"MNN_OPTIMISE ok changed=true size_before=27 size_after=48 plop=accepted simplify=0 detlog=unchanged detlog_steps=0","program":["num(13).","num(7).","num(6).","num(9).","values(A) :-\n    mnn_loop2_1([13, 7, 6, 9], A).","mnn_loop2_1([], []).","mnn_loop2_1([A|B], [A|C]) :-\n    mnn_loop2_1(B, C)."]},"steps":["parse","size","plop","simplify","detlog","size","emit"]}
+170. loop2({"program":"score(dee0, 5).\nscore(eve1, 8).\npassed(Ns) :- findall(N, (score(N, S), S >= 7), Ns).","query":"passed(Ns)"})
+   => {"ok":true,"result":{"converted":["[[eve1]]"],"original":["[[eve1]]"],"same":true},"steps":["parse","find","walk","walk","convert","check"]}
+171. plop({"program":"squares(L) :- findall(Y, (between(1, 6, X), Y is X * X), L)."})
+   => {"ok":true,"result":{"status":"unchanged","steps":["proof_step(1, identity, [], equivalent(domain(all), modes(all)))"]},"steps":["parse","candidates","proof","check"]}
+172. detlog({"program":"squares(L) :- findall(Y, (between(1, 5, X), Y is X * X), L)."})
+   => {"ok":true,"result":{"rows":[]},"steps":["parse","report"]}
+173. detlog_transform({"program":"num(9).\nnum(2).\nnum(11).\nvalues(Vs) :- findall(X, num(X), Vs)."})
+   => {"ok":true,"result":{"events":[]},"steps":["parse","rewrite","check"]}
+174. pid({"program":"p(X) :- true, q(X).\nq(6).\nq(12).\nr :- true, (fail ; s).\ns."})
+   => {"ok":true,"result":{"classes":[["p/1","non_recursive"],["q/1","non_recursive"],["r/0","non_recursive"],["s/0","non_recursive"]]},"steps":["parse","recursion","measure","induction","tail"]}
+175. s2a({"name":"f","examples":[["4","-13"],["2","-9"],["3","-11"],["9","-23"],["0","-5"]]})
+   => {"ok":true,"result":{"program":["f(A, B) :-\n    B is -2*A+ -5."],"solved_by":"s2a"},"steps":["examples","s2a","program","check"]}
+176. s2a2({"name":"rev","examples":[["[5,4,1]","[1,4,5]"],["[]","[]"],["[]","[]"]]})
+   => {"ok":true,"result":{"program":["rev(A, B) :-\n    reverse(A, B)."],"solved_by":"s2a2"},"steps":["examples","s2a","program","check"]}
+177. s2a2_optimise({"pairs":[{"name":"col","targets":"[col/1]","before":"colour(c).\ncolour(b).\nq(X) :- colour(X).\ncol(X) :- q(X).","after":"colour(c).\ncolour(b).\nq(X) :- colour(X).\ncol(X) :- colour(X)."},{"name":"big","targets":"[big/1]","before":"size(b).\ns(X) :- size(X).\nbig(X) :- s(X).","after":"size(b).\ns(X) :- size(X).\nbig(X) :- size(X)."}],"name":"conn","targets":"[conn/2]","program":"edge(d, a).\nedge(a, b).\ne(U, V) :- edge(U, V).\nconn(U, V) :- e(U, V)."})
+   => {"ok":true,"result":{"check":"accepted","verdict":"proved(exhaustive(512))"},"steps":["pairs","pairs","learn","apply","prove","check"]}
+178. s2a2_derive({"name":"rev","mode":"[in(list(any)), out]","bound":"3","samples":"[[4,4,-2], [2,6,8]]","program":"rev([], []).\nrev([H|T], R) :- rev(T, R0), app(R0, [H], R).\napp([], A, A).\napp([X|Xs], B, [X|C]) :- app(Xs, B, C)."})
+   => {"ok":true,"result":{"check":"accepted","strategy":"accumulate"},"steps":["spec","derive","verify","check","run"]}
+179. algebraplop({"sequence":"3, 3, 4","value":""})
+   => {"ok":true,"result":{"formula":"none","next":[]},"steps":["samples","differences","formula"]}
+180. qi({"program":"picks(L) :- findall(X, (member(X, [1,2,18,20]), X > 13), L).","seed":"24"})
+   => {"ok":false,"error":"mnns found nothing to show for this input (qi)."}
+181. aioc_compile({"kind":"cfg","name":"balanced","source":"cfg(s, [rule(s, [terminal(x), nonterminal(s), terminal(b)]), rule(s, [])])"})
+   => {"ok":true,"result":{"verdict":"accepted"},"steps":["source","compile","check"]}
+182. aioc_allocate({"quantum":"inspired","candidates":[{"name":"original","assessment":3,"cost":3,"amplitude":0},{"name":"table","assessment":3,"cost":0,"amplitude":2}],"budgets":[{"resource":"time","amount":82},{"resource":"workers","amount":2}]})
+   => {"ok":true,"result":{"allocations":[["original","1","6","0"],["table","12","76","2"]]},"steps":["candidates","weights","divide"]}
+183. aioc_simplify({"program":"choose(V) :- once((V = a ; V = c)).\nfirst(X) :- once(member(X, [15,4,7])).\npositive(X) :- integer(X), X > 3, !."})
+   => {"ok":true,"result":{"effect":"unchanged"},"steps":["parse","simplify","check"]}
+184. starlog({"program":"greet(S) :- S is \"logic\" : \" world\".\nboth(L) :- L is [logic] & [world].\nname(A) :- A is logic • world."})
+   => {"ok":true,"result":{"back":["greet(A) :-\n    A is \"logic\":\" world\".","both(A) :-\n    A is [logic]&[world].","name(A) :-\n    A is logic•world."],"ir":["greet(A) :-\n    string_concat(\"logic\", \" world\", A).","both(A) :-\n    append([logic], [world], A).","name(A) :-\n    atom_concat(logic, world, A)."]},"steps":["parse","to_ir","back"]}
+185. problem("plop", {"program":" "})
+   => "Write a program first."
+186. diffLines(["a."], ["a.","f."])
+   => [{"text":"a.","kind":"same"},{"text":"f.","kind":"added"}]
+187. linesAt("s2a", "nowhere")
+   => []
+188. barScale([{"label":"clauses","value":28},{"label":"goals","value":32},{"label":"predicates","value":22},{"label":"total","value":37}], [])
+   => [{"label":"clauses","value":28,"width":0.756757,"was":null,"wasWidth":null},{"label":"goals","value":32,"width":0.864865,"was":null,"wasWidth":null},{"label":"predicates","value":22,"width":0.594595,"was":null,"wasWidth":null},{"label":"total","value":37,"width":1,"was":null,"wasWidth":null}]
+189. flowState([[4,"no"],[6,"no"],[8,"yes"],[3,"no"]], 1)
+   => {"seen":[[4,"no"]],"current":[4,"no"],"list":[],"rest":[[6,"no"],[8,"yes"],[3,"no"]]}
+190. optimise({"program":"p(X) :- true, q(X).\nq(20).\nq(11).\nq(15).\nr :- once(true), (fail ; s).\ns."})
+   => {"ok":true,"result":{"changed":true,"line":"MNN_OPTIMISE ok changed=true size_before=45 size_after=31 plop=unchanged simplify=4 detlog=unchanged detlog_steps=0","program":["p(A) :-\n    q(A).","q(20).","q(11).","q(15).","r :-\n    s.","s."]},"steps":["parse","size","plop","simplify","detlog","size","emit"]}
+191. loop2({"program":"picks(L) :- findall(X, (member(X, [12,19,2,1]), X > 6), L).","query":"picks(L)"})
+   => {"ok":true,"result":{"converted":["[[12, 19]]"],"original":["[[12, 19]]"],"same":true},"steps":["parse","find","walk","walk","walk","walk","convert","check"]}
+192. plop({"program":"choose(V) :- once((V = b ; V = c)).\nfirst(X) :- once(member(X, [5,3,19,10,2])).\npositive(X) :- integer(X), X > 1, !."})
+   => {"ok":true,"result":{"status":"unchanged","steps":["proof_step(1, identity, [], equivalent(domain(all), modes(all)))"]},"steps":["parse","candidates","proof","check"]}
+193. detlog({"program":"score(cal0, 4).\nscore(bob1, 7).\nscore(bob2, 1).\nscore(eve3, 3).\npassed(Ns) :- findall(N, (score(N, S), S >= 4), Ns)."})
+   => {"ok":true,"result":{"rows":[["score/2","semidet","[0, 1]"]]},"steps":["parse","classify","report"]}
+194. detlog_transform({"program":"max(X, Y, X) :- X >= Y, !.\nmax(_, Y, Y).\nc(12).\nc(15).\nc(14).\nc(2)."})
+   => {"ok":true,"result":{"events":[]},"steps":["parse","rewrite","check"]}
+195. pid({"program":"num(10).\nnum(7).\nnum(11).\nnum(1).\nvalues(Vs) :- findall(X, num(X), Vs)."})
+   => {"ok":true,"result":{"classes":[["num/1","non_recursive"],["values/1","non_recursive"]]},"steps":["parse","recursion","measure","induction","tail"]}
+196. s2a({"name":"h","examples":[["0","4"],["7","32"],["9","58"],["4","8"]]})
+   => {"ok":true,"result":{"program":["h(A, B) :-\n    B is 1*A*A+ -3*A+4."],"solved_by":"s2a"},"steps":["examples","s2a","program","check"]}
+197. s2a2({"name":"rev","examples":[["[0,3,7]","[7,3,0]"],["[1,0,2]","[2,0,1]"],["[2]","[2]"],["[7,-2,4,7]","[7,4,-2,7]"]]})
+   => {"ok":true,"result":{"program":["rev(A, B) :-\n    reverse(A, B)."],"solved_by":"s2a2"},"steps":["examples","s2a","program","check"]}
+198. s2a2_optimise({"pairs":[{"name":"col","targets":"[col/1]","before":"colour(e).\ncolour(a).\nq(X) :- colour(X).\ncol(X) :- q(X).","after":"colour(e).\ncolour(a).\nq(X) :- colour(X).\ncol(X) :- colour(X)."},{"name":"big","targets":"[big/1]","before":"size(a).\nsize(c).\nsize(e).\ns(X) :- size(X).\nbig(X) :- s(X).","after":"size(a).\nsize(c).\nsize(e).\ns(X) :- size(X).\nbig(X) :- size(X)."}],"name":"conn","targets":"[conn/2]","program":"edge(b, b).\ne(U, V) :- edge(U, V).\nconn(U, V) :- e(U, V)."})
+   => {"ok":true,"result":{"check":"accepted","verdict":"proved(exhaustive(2))"},"steps":["pairs","pairs","learn","apply","prove","check"]}
+199. s2a2_derive({"name":"flat2","mode":"[in(list(list(any))), out]","bound":"2","samples":"[[[],[8]], [[], [a]]]","program":"flat2([], []).\nflat2([L|Ls], F) :- flat2(Ls, F0), app(L, F0, F).\napp([], A, A).\napp([X|Xs], B, [X|C]) :- app(Xs, B, C)."})
+   => {"ok":true,"result":{"check":"accepted","strategy":"fuse"},"steps":["spec","derive","verify","check","run"]}
+200. algebraplop({"sequence":"-1, -1, 0, 1","value":"11"})
+   => {"ok":true,"result":{"formula":"none","next":[]},"steps":["samples","differences","formula"]}

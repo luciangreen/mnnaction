@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "test": "node --test test/*.test.js",
-    "demos": "node scripts/check-demos.mjs --write"
+    "demos": "node scripts/check-demos.mjs --write",
+    "ios": "node io/make-ios.mjs"
   },
   "license": "BSD-3-Clause"
 }

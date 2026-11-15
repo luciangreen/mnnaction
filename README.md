@@ -48,3 +48,4 @@ It reads one line of JSON (`algorithm` and `input`) and writes the steps as JSON
 
 - `npm test`: the algorithm definitions, inputs and drawing helpers.
 - `npm run demos`: runs every demo on real mnns (`MNNS_DIR` and `S2A2_DIR` say where they are) and writes `demos/recorded.json`. CI does this on every push, against the latest mnns and S2A2.
+- `npm run ios`: writes 200 inputs and outputs from real runs to `io/ios.txt` (to read) and `io/ios.jsonl`. Most run the driver on real mnns and S2A2 with custom data from a fixed seed, for every algorithm: optimise, loop2, PLOp, Detlog, PID, s2a, the S2A2 bridge (with reference proofs), S2A2 learn and apply, S2A2 derive, AlgebraPLOp, QI, the AIOC algorithms and Starlog. The rest run the app's request checks, line diffs, bar scales and flow steps. CI makes them again and fails if any output changes; `npm test` reruns them where swipl is installed.
