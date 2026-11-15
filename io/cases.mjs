@@ -84,7 +84,7 @@ const drivers = [
   }],
   ['algebraplop', (r) => {
     const a = r.int(-4, 6), b = r.int(1, 5), c = r.int(1, 3), n = r.int(3, 7);
-    const seq = r.pick([(i) => a + b * i, (i) => c * i * i + b * i + a, (i) => c * b ** i, (i) => i ** 3 + a, (i) => [1, 1, 2, 3, 5, 8, 13][i] + a]);
+    const seq = r.pick([(i) => a + b * i, (i) => c * i * i + b * i + a, (i) => c * b ** i, (i) => i ** 3 + a, (i) => [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144][i] + a]);
     const xs = Array.from({ length: n }, (_, i) => seq(i));
     return { sequence: xs.join(', '), value: r.chance(0.5) ? String(seq(n + r.int(0, 4))) : '' };
   }],
@@ -107,7 +107,7 @@ const drivers = [
 ];
 
 const js = [
-  { name: 'problem', make: (r) => { const a = r.pick(ALGORITHMS); const d = r.pick(a.demos).input; const spoil = r.pick([null, 'program', 'name', 'sequence', 'examples']); const input = { ...d }; if (spoil && spoil in input) input[spoil] = spoil === 'name' ? 'Bad' : spoil === 'examples' ? [] : spoil === 'sequence' ? '4' : ' '; return [a.id, input]; }, run: (id, input) => problem(id, input) || 'ok' },
+  { name: 'problem', make: (r) => { const a = r.pick(ALGORITHMS); const input = { ...r.pick(a.demos).input }; const keys = Object.keys(input).filter((k) => ['program', 'name', 'sequence', 'examples', 'source', 'candidates', 'pairs'].includes(k)); const spoil = r.chance(0.7) && keys.length ? r.pick(keys) : null; if (spoil) input[spoil] = { name: 'Bad', examples: [], sequence: '4', candidates: [], pairs: [] }[spoil] ?? ' '; return [a.id, input]; }, run: (id, input) => problem(id, input) || 'ok' },
   { name: 'diffLines', make: (r) => { const a = r.some(['a.', 'b.', 'c.', 'd.', 'e.'], 1, 5); const b = r.chance(0.5) ? a.filter(() => r.chance(0.7)).concat(r.some(['f.', 'g.'], 0, 2)) : r.some(['a.', 'b.', 'c.', 'f.'], 1, 5); return [a, b]; }, run: (a, b) => diffLines(a, b) },
   { name: 'linesAt', make: (r) => { const a = r.pick(ALGORITHMS); return [a.id, r.pick([...a.pseudocode.map(([id]) => id), 'nowhere'])]; }, run: (id, at) => linesAt(ALGORITHMS.find((a) => a.id === id).pseudocode, at) },
   { name: 'barScale', make: (r) => { const ls = ['clauses', 'goals', 'predicates', 'total']; return [ls.map((label) => ({ label, value: r.int(0, 40) })), r.chance(0.5) ? ls.map((label) => ({ label, value: r.int(0, 40) })) : []]; }, run: (b, c) => barScale(b, c) },
