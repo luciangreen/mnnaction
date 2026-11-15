@@ -275,7 +275,9 @@ function showAlgorithm() {
 
 function describeInput(a, input) {
   switch (a.input) {
-    case 'examples': return `${input.name}:\n${(input.examples ?? []).map(([x, y]) => `  ${x}  →  ${y}`).join('\n')}`;
+    case 'examples': return `${input.name}:\n${(input.examples ?? []).map(([x, y]) => `  ${x}  →  ${y}`).join('\n')}${input.reference ? `\n\nreference:\n${input.reference}` : ''}`;
+    case 'pairs': return `${(input.pairs ?? []).map((p, k) => `pair ${k + 1} (${p.targets}), before:\n${p.before}\nafter:\n${p.after}`).join('\n\n')}\n\napply to (${input.targets}):\n${input.program}`;
+    case 'derive': return `${input.program}\n\nmode: ${input.mode}${input.samples ? `\nsamples: ${input.samples}` : ''}`;
     case 'sequence': return `${input.sequence}${input.value ? `\nposition of: ${input.value}` : ''}`;
     case 'grammar': return `${input.kind} ${input.name}:\n${input.source}`;
     case 'allocation': return `${(input.candidates ?? []).map((c) => `${c.name}: assessment ${c.assessment}, cost ${c.cost}, amplitude ${c.amplitude}`).join('\n')}\nbudgets: ${(input.budgets ?? []).map((b) => `${b.resource} ${b.amount}`).join(', ')}${input.quantum !== 'off' ? `\nquantum: ${input.quantum}` : ''}`;
@@ -315,6 +317,20 @@ function drawCustom() {
         el('td', {}, el('button', { type: 'button', class: 'ghost small', 'aria-label': `Remove example ${k + 1}`, onclick: () => { setCustom((i) => i.examples.splice(k, 1)); drawCustom(); } }, '×'))))));
     kids.push(el('button', { type: 'button', class: 'ghost small', onclick: () => { setCustom((i) => { i.examples = [...(i.examples ?? []), ['', '']]; }); drawCustom(); } }, '+ example'));
     if (a.id === 's2a') kids.push(el('label', { class: 'check' }, el('input', { type: 'checkbox', checked: !!input.table, onchange: (e) => setCustom((i) => { i.table = e.target.checked; }) }), 'Allow a lookup table'));
+    if (a.id === 's2a2') kids.push(text('reference', 'Reference program to prove it equal to (optional)', 4));
+  } else if (a.input === 'pairs') {
+    (input.pairs ?? []).forEach((p, k) => {
+      const set = (key) => (e) => setCustom((i) => { i.pairs[k][key] = e.target.value; });
+      kids.push(el('fieldset', { class: 'pair' }, el('legend', {}, `Pair ${k + 1} `, el('button', { type: 'button', class: 'ghost small', 'aria-label': `Remove pair ${k + 1}`, onclick: () => { setCustom((i) => i.pairs.splice(k, 1)); drawCustom(); } }, '×')),
+        field('Main predicate', el('input', { type: 'text', value: p.name ?? '', oninput: set('name') })),
+        field('Targets (whose answers must not change)', el('input', { type: 'text', value: p.targets ?? '', oninput: set('targets') })),
+        field('Before', el('textarea', { value: p.before ?? '', rows: 4, spellcheck: false, oninput: set('before') })),
+        field('After', el('textarea', { value: p.after ?? '', rows: 4, spellcheck: false, oninput: set('after') }))));
+    });
+    kids.push(el('button', { type: 'button', class: 'ghost small', onclick: () => { setCustom((i) => { i.pairs = [...(i.pairs ?? []), { name: 'p', targets: '[p/1]', before: '', after: '' }]; }); drawCustom(); } }, '+ pair'));
+    kids.push(text('name', 'Program to apply it to: main predicate'), text('targets', 'Its targets'), text('program', 'Program', 5));
+  } else if (a.input === 'derive') {
+    kids.push(text('name', 'Main predicate'), text('program', 'Specification', 6), text('mode', 'Mode (for example [in(list(int)), out])'), text('bound', 'Bound for the check (optional)'), text('samples', 'Sample inputs to run (a list, optional)'));
   } else if (a.input === 'sequence') {
     kids.push(text('sequence', 'Numbers, from position 0 (commas between)'), text('value', 'Find the position of (optional)'));
   } else if (a.input === 'grammar') {
