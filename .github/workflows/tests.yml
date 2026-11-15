@@ -27,8 +27,24 @@ jobs:
           sudo apt-add-repository --yes ppa:swi-prolog/stable
           sudo apt-get update
           sudo apt-get install --yes swi-prolog-nox
+      - name: The 200 inputs and outputs (made again on real mnns and S2A2)
+        working-directory: mnnaction
+        env:
+          MNNS_DIR: ${{ github.workspace }}/mnns
+          S2A2_DIR: ${{ github.workspace }}/S2A2
+        run: |
+          npm run ios
+          if ! git diff --quiet -- io || [ -n "$(git status --porcelain -- io)" ]; then
+            git --no-pager diff --stat -- io
+            echo "IOS-FILES-BEGIN $(tar czf - io/ios.txt io/ios.jsonl | base64 -w0) IOS-FILES-END"
+            echo "io/ios.txt or io/ios.jsonl changed: run npm run ios and commit them"
+            exit 1
+          fi
       - name: Unit tests
         working-directory: mnnaction
+        env:
+          MNNS_DIR: ${{ github.workspace }}/mnns
+          S2A2_DIR: ${{ github.workspace }}/S2A2
         run: npm test
       - name: Every demo runs on real mnns
         working-directory: mnnaction
