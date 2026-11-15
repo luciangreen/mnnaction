@@ -284,7 +284,11 @@ spec_algorithm(Which, In, Steps, _{program: Cs, solved_by: By}) :-
     Pairs \== [],
     findall([[input, [['A', I]]], [output, [['B', O]]]], member(I-O, Pairs), Spec),
     ( get_dict(table, In, true) -> Opts0 = [allow_table(true)] ; Opts0 = [] ),
-    ( s2a2_dir(D) -> Opts = [s2a2_home(D) | Opts0] ; Opts = Opts0 ),
+    % S2A2 bridge: a reference program to prove the found program equal to
+    ( Which == s2a2, text(In, reference, "", RefText), RefText \== "", clause_terms(RefText, RefCs), RefCs = [RC | _]
+    -> clause_head(RC, RH), functor(RH, RefName, _), RefOpts = [reference(RefCs, RefName)] ; RefOpts = [] ),
+    append(Opts0, RefOpts, Opts1),
+    ( s2a2_dir(D) -> Opts = [s2a2_home(D) | Opts1] ; Opts = Opts1 ),
     findall([IS, OS], ( member(I-O, Pairs), show(I, IS), show(O, OS) ), Rows),
     step(examples, "The examples: each input A and the output B it should give.", _{table: _{head: ["A", "B"], rows: Rows}}, S1),
     mnn_s2a:s2a(Name, Spec, Opts0, R0),
@@ -296,14 +300,16 @@ spec_algorithm(Which, In, Steps, _{program: Cs, solved_by: By}) :-
         step(s2a, N2, _{check: R0S}, S2),
         (   Which == s2a2
         ->  ( mnn_s2a2:s2a2(Name, Spec, Opts, R1) -> true ; R1 = no_algorithm(s2a2_failed) ),
+            ( R1 = mnn_program(_, _, _, _, trace(Tr)), memberchk(s2a2_io_synth(_, Kind, _), Tr) -> show(Kind, KindS) ; KindS = "" ),
             ( R1 = mnn_program(_, _, _, _, _) -> Program = R1, By = s2a2 ; Program = none, By = none, show(R1, R1S) )
         ;   Program = none, By = none, R1S = R0S
         )
     ),
     (   Program \== none
     ->  clauses(Program, Cs),
-        format(string(N3), "The program (found by ~w):", [By]),
+        ( By == s2a2, KindS \== "" -> format(string(N3), "The program, found by S2A2's io_synth (method: ~w), in mnns's IR:", [KindS]) ; format(string(N3), "The program (found by ~w):", [By]) ),
         step(program, N3, _{program: Cs}, S3),
+        proof_steps_for(Which, Program, ProofSteps),
         clauses_text(Cs, PText),
         findall([IS, Want, Got, Ok],
                 ( member(I-O, Pairs), show(I, IS), show(O, Want),
@@ -312,12 +318,33 @@ spec_algorithm(Which, In, Steps, _{program: Cs, solved_by: By}) :-
                   ( Ans = [A1 | _], sub_string(A1, _, _, _, "[") -> answer_value(A1, Got) ; Got = "(no answer)" ),
                   ( Got == Want -> Ok = "✓" ; Ok = "✗" ), ignore(Out = x) ), Checks),
         step(check, "Run it on every example in the sandbox.", _{table: _{head: ["A", "wanted", "got", ""], rows: Checks}}, S4),
-        Steps0 = [S1, S2, S3, S4]
+        append([[S1, S2, S3], ProofSteps, [S4]], Steps0)
     ;   ( Which == s2a2 -> format(string(N3), "S2A2 found nothing either: ~w.", [R1S]) ; N3 = "Try the S2A2 bridge for lists, recursion and invented helpers." ),
         step(program, N3, _{}, S3), Cs = [],
         Steps0 = [S1, S2, S3]
     ),
     Steps = Steps0.
+
+% With a reference program, the S2A2 bridge proves the found program equal to it
+% (induction_equivalence), and mnns's own checker re-proves the claim.
+proof_steps_for(s2a2, Program, [Step]) :-
+    Program = mnn_program(_, _, _, Proof, trace(Tr)),
+    memberchk(s2a2_reference(RefIR), Tr), !,
+    clauses(RefIR, RefCs),
+    (   Proof = proof([PS | _])
+    ->  show(PS, PSS),
+        ( catch(mnn_proof_checker:check_proof(Program, RefIR, Proof, V0), _, V0 = rejected) -> true ; V0 = rejected ),
+        show(V0, V),
+        format(string(N), "Prove it equals the reference (shown) for every input of its types: ~w. mnns's checker re-proves the claim with its own copy of the prover.", [PSS])
+    ;   N = "No proof was found that it equals the reference (shown).", V = "not proved"
+    ),
+    step(proof, N, _{program: RefCs, check: V}, Step).
+proof_steps_for(_, _, []).
+
+% the clauses in a text, as terms
+clause_terms(Text, Cs) :- open_string(Text, S), read_all(S, Cs).
+clause_head((H :- _), H) :- !.
+clause_head(H, H).
 
 % "[[a, 5]]" -> the last value in the first answer
 % (each answer lists the values of the goal's variables, here just the output)
@@ -482,3 +509,85 @@ algorithm(starlog, In, Steps, _{ir: CI, back: Back}) :-
     step(to_ir, "Turn each expression into the predicate call that computes it.", _{program: CI, before: C0}, S2),
     step(back, "And back again, to the readable Starlog view.", _{program: Back, before: CI}, S3),
     Steps = [S1, S2, S3].
+
+% 15. S2A2's optimisation: learn rewrite rules from before/after pairs, apply them, and
+%     re-check the edb_equivalence proof
+algorithm(s2a2_optimise, In, Steps, _{verdict: VS, check: CS}) :-
+    get_dict(pairs, In, PairsIn),
+    findall(pair(B, A, Ts), ( member(Pr, PairsIn), atom_string(N, Pr.name), clause_terms(Pr.before, BC), clause_terms(Pr.after, AC),
+                              term_string(Ts, Pr.targets), mnn_s2a2:ir_of(N, BC, mnnaction, [], proof([]), B), mnn_s2a2:ir_of(N, AC, mnnaction, [], proof([]), A) ), Pairs),
+    text(In, name, "conn", NameS), atom_string(Name, NameS),
+    clause_terms(In.program, PC), term_string(Targets, In.targets),
+    mnn_s2a2:ir_of(Name, PC, mnnaction, [], proof([]), P),
+    home_options(HO),
+    findall(Sx, ( nth1(I, Pairs, pair(B, A, Ts)), clauses(B, BCs), clauses(A, ACs), show(Ts, TsS),
+                  format(string(Nx), "Pair ~d: before and after (the answers of ~w stay the same).", [I, TsS]),
+                  step(pairs, Nx, _{program: ACs, before: BCs}, Sx) ), PairSteps),
+    ( mnn_s2a2:s2a2_learn(Pairs, HO, Alg) -> show(Alg, AlgS) ; Alg = none, AlgS = "nothing learned" ),
+    format(string(NL), "S2A2's learn/2 finds the operators and the conditions that explain every pair: ~w", [AlgS]),
+    step(learn, NL, _{check: AlgS}, SL),
+    clauses(P, C0),
+    (   Alg \== none, mnn_s2a2:s2a2_apply(Alg, P, Targets, HO, R)
+    ->  R = mnn_program(_, _, _, Proof, trace(Tr)), clauses(R, C1),
+        ( memberchk(s2a2_apply(ApSteps), Tr) -> shows(ApSteps, ApS) ; ApS = [] ),
+        ( memberchk(s2a2_prover(Verdict), Tr) -> show(Verdict, VS) ; VS = "unknown" ),
+        step(apply, "Apply the learned algorithm to a new program.", _{program: C1, before: C0, items: ApS}, SA),
+        format(string(NV), "S2A2's prover compares the answers of the targets before and after, over every set of input facts: ~w.", [VS]),
+        step(prove, NV, _{check: VS}, SP),
+        (   Proof = proof([PS | _])
+        ->  show(PS, PSS),
+            ( catch(mnn_proof_checker:check_proof(R, P, Proof, V0), _, V0 = rejected) -> true ; V0 = rejected ), show(V0, CS),
+            format(string(NC), "mnns's checker repeats the proof (~w) with its own copy of S2A2's prover: ~w.", [PSS, CS])
+        ;   CS = "no proof", NC = "No proof: the prover did not prove the targets' answers equal, so mnns keeps the program without one."
+        ),
+        step(check, NC, _{check: CS}, SC),
+        append([PairSteps, [SL, SA, SP, SC]], Steps)
+    ;   VS = "not applied", CS = "none",
+        step(apply, "Nothing to apply.", _{program: C0}, SA),
+        append([PairSteps, [SL, SA]], Steps)
+    ).
+
+home_options(O) :- ( s2a2_dir(D) -> O = [s2a2_home(D)] ; O = [] ).
+
+% 16. S2A2's fold.pl: a faster program derived from a specification, with a fold_derivation
+%     proof that mnns re-checks
+algorithm(s2a2_derive, In, Steps, _{strategy: StS, check: CS}) :-
+    text(In, name, "sum", NameS), atom_string(Name, NameS),
+    clause_terms(In.program, SC), term_string(Mode, In.mode),
+    mnn_s2a2:ir_of(Name, SC, mnnaction, [], proof([]), Spec), clauses(Spec, C0),
+    ( get_dict(bound, In, B0), B0 \== "" -> num(B0, Bound), O0 = [bound(Bound)] ; O0 = [] ),
+    home_options(HO), append(O0, HO, Opts),
+    show(Mode, ModeS),
+    format(string(N1), "The specification: a clear program, for inputs of mode ~w.", [ModeS]),
+    step(spec, N1, _{program: C0}, S1),
+    (   mnn_s2a2:s2a2_derive(Spec, Mode, Opts, R), R = mnn_program(_, _, _, Proof, trace(Tr))
+    ->  clauses(R, C1),
+        ( memberchk(s2a2_fold(St, Lemmas, Total, Functional, _, Bounded), Tr) -> true ; St = unknown, Lemmas = [], Total = unknown, Functional = unknown, Bounded = unknown ),
+        show(St, StS), ( is_list(Lemmas) -> shows(Lemmas, LS) ; show(Lemmas, L1), LS = [L1] ),
+        maplist(show, [Total, Functional, Bounded], [TS, FS, BS]),
+        format(string(N2), "fold.pl chooses a strategy (~w) and unfolds, folds and proves lemmas to reach a faster program.", [StS]),
+        step(derive, N2, _{program: C1, before: C0, items: LS}, S2),
+        format(string(N3), "verify/5: the program is ~w and the specification ~w, so they agree on every input of the mode. A bounded check: ~w.", [TS, FS, BS]),
+        step(verify, N3, _{table: _{head: ["check", "result"], rows: [["total", TS], ["functional", FS], ["bounded check", BS]]}}, S3),
+        (   Proof = proof([PS | _])
+        ->  show(PS, PSS), ( catch(mnn_proof_checker:check_proof(R, Spec, Proof, V0), _, V0 = rejected) -> true ; V0 = rejected ), show(V0, CS),
+            format(string(N4), "mnns's checker repeats the derivation (~w) with its own copy of fold.pl: ~w.", [PSS, CS])
+        ;   CS = "no proof", N4 = "No proof came back."
+        ),
+        step(check, N4, _{check: CS}, S4),
+        % both programs on sample inputs, in the sandbox
+        ( get_dict(samples, In, SamplesS), SamplesS \== "" -> term_string(Samples, SamplesS) ; Samples = [] ),
+        clauses_text(C0, T0), clauses_text(C1, T1),
+        findall([IS, A0, A1], ( member(X, Samples), show(X, IS), G =.. [Name, X, _],
+                                sandbox_answers(T0, G, 1, Ans0), sandbox_answers(T1, G, 1, Ans1),
+                                first_value(Ans0, A0), first_value(Ans1, A1) ), Rows),
+        ( Rows == [] -> Steps = [S1, S2, S3, S4]
+        ; step(run, "Run the specification and the derived program on sample inputs.", _{table: _{head: ["input", "specification", "derived"], rows: Rows}}, S5),
+          Steps = [S1, S2, S3, S4, S5] )
+    ;   StS = "none", CS = "none",
+        step(derive, "fold.pl found no faster program it could prove.", _{check: "no derivation"}, S2),
+        Steps = [S1, S2]
+    ).
+
+first_value([A | _], V) :- sub_string(A, 0, 1, _, "["), !, answer_value(A, V).
+first_value(_, "(no answer)").

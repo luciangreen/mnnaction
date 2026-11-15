@@ -12,11 +12,13 @@ Every step comes from running your real mnns through SWI-Prolog (in LucianOS). N
 | | **findall to loop** (loop2) | The generator's items going through the filter into the list, the loop predicate written, and both programs' answers compared in the sandbox |
 | | **PLOp with proof checking** | Each proof step, then the independent checker's verdict |
 | | **Detlog: compiling once/1 and cuts** | Each rewrite, then the proof check |
+| | **S2A2: learn and apply an optimisation** | Before/after pairs, the operators and conditions S2A2 learns, the new program they give, S2A2's prover's verdict, and mnns repeating the edb_equivalence proof |
 | | **Quantum-inspired search** | Candidates' amplitudes rising and falling, update by update, with the evidence for and against; the selected program and its OpenQASM 3 register |
 | Analysing | **Detlog: how many answers?** | Each predicate's success counts (0, 1, 2+) and class |
 | | **PID** | The call graph with recursive predicates marked, measures, induction obligations and tail calls |
 | Synthesising | **Spec to algorithm** (S2A) | The examples, the program found, and a check on every example |
-| | **S2A2 bridge** | s2a/4 first, then S2A2's io_synth (lists, recursion, helpers), checked on every example |
+| | **S2A2 bridge** | s2a/4 first, then S2A2's io_synth (lists, recursion, helpers), checked on every example; with a reference program, the induction_equivalence proof that mnns re-proves |
+| | **S2A2: derive a faster program** | fold.pl's strategy, lemmas and checks (total, functional, bounded), the faster program, the fold_derivation proof mnns repeats, and both programs run on samples |
 | | **AlgebraPLOp** | The differences table, the formula checked on every sample, the next values, and the position of a value |
 | AIOC | **Decision trees and grammars** | The tree drawn (or the grammar), the IR it compiles to, and the translation proof |
 | | **Dividing budgets** | Candidates, weights, and each budget's whole-number shares |
